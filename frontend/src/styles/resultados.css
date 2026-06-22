@@ -1,0 +1,96 @@
+.resultados-page { display: flex; flex-direction: column; gap: 24px; }
+/* LAYOUT DOS PANELES */
+.res-layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+.res-panel-izq { background: var(--blanco); border: 1px solid var(--gris-borde); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.res-panel-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--gris-borde); }
+.res-panel-titulo { font-family: var(--font-serif); font-size: 15px; font-weight: 700; color: var(--negro); }
+.res-panel-sub { font-size: 12px; color: var(--gris-muted); margin-top: 3px; }
+.partidos-pendientes-list { flex: 1; overflow-y: auto; }
+.partido-pendiente-item { padding: 14px 20px; border-bottom: 1px solid var(--gris-borde); cursor: pointer; transition: background 0.1s; }
+.partido-pendiente-item:last-child { border-bottom: none; }
+.partido-pendiente-item:hover { background: var(--azul-light); }
+.partido-seleccionado { background: var(--azul-light) !important; border-left: 3px solid var(--azul); }
+.pp-enfrentamiento { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+.pp-equipo { font-size: 13px; font-weight: 600; color: var(--negro); }
+.pp-vs { font-size: 11px; color: var(--gris-muted); background: var(--gris-bg); padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+.pp-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--gris-muted); }
+.pp-vacio { padding: 32px 20px; text-align: center; font-size: 13px; color: var(--gris-muted); }
+/* PANEL DERECHO */
+.res-panel-der { display: flex; flex-direction: column; }
+.res-form-placeholder { background: var(--blanco); border: 1px dashed var(--gris-borde); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; min-height: 220px; }
+.res-form-placeholder p { font-size: 13px; color: var(--gris-muted); text-align: center; max-width: 240px; line-height: 1.6; }
+.res-form-card { background: var(--blanco); border: 1px solid var(--gris-borde); border-top: 3px solid var(--azul); border-radius: var(--radius); overflow: hidden; }
+.res-form-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--gris-borde); }
+.res-form-titulo { font-family: var(--font-serif); font-size: 16px; font-weight: 700; color: var(--negro); }
+.res-form-sub { font-size: 12px; color: var(--gris-muted); margin-top: 3px; }
+/* MARCADOR */
+.res-enfrentamiento-display { display: flex; align-items: flex-start; justify-content: center; gap: 0; padding: 28px 24px 20px; border-bottom: 1px solid var(--gris-borde); }
+.res-equipo-block { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+.res-equipo-nombre { font-size: 14px; font-weight: 700; color: var(--negro); text-align: center; }
+.res-equipo-rol { font-size: 11px; color: var(--gris-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.res-marcador-input { width: 72px; height: 72px; text-align: center; font-family: var(--font-serif); font-size: 32px; font-weight: 700; color: var(--azul); background: var(--azul-light); border: 2px solid #c3d9f7; border-radius: var(--radius); outline: none; transition: border-color 0.15s; }
+.res-marcador-input:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,80,179,0.1); }
+.res-vs-block { display: flex; align-items: center; padding: 0 16px; padding-top: 48px; }
+.res-vs-text { font-size: 20px; color: var(--gris-borde); font-weight: 700; }
+.res-form-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 12px; font-weight: 600; color: var(--negro); text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group textarea { background: var(--gris-bg); border: 1px solid var(--gris-borde); color: var(--negro); padding: 10px 13px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; outline: none; resize: vertical; transition: border-color 0.15s; }
+.form-group textarea:focus { border-color: var(--azul-mid); background: var(--blanco); }
+.res-publicar-label { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--gris-texto); font-weight: 500; cursor: pointer; }
+.res-publicar-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--azul); cursor: pointer; }
+.input-error { border-color: #e53e3e !important; }
+.error-msg { font-size: 12px; color: #e53e3e; font-weight: 500; }
+.res-form-footer { padding: 14px 24px; border-top: 1px solid var(--gris-borde); display: flex; justify-content: flex-end; gap: 10px; background: var(--gris-bg); }
+.btn-cancelar-res { background: transparent; border: 1px solid var(--gris-borde); color: var(--gris-texto); padding: 9px 20px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; }
+.btn-cancelar-res:hover { border-color: var(--negro); color: var(--negro); }
+.btn-registrar-res { background: var(--azul); color: #fff; border: none; padding: 9px 24px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btn-registrar-res:hover { background: var(--azul-mid); }
+/* HISTORIAL */
+.res-historial { background: var(--blanco); border: 1px solid var(--gris-borde); border-radius: var(--radius); overflow: hidden; }
+.res-historial-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--gris-borde); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.res-historial-titulo { font-family: var(--font-serif); font-size: 16px; font-weight: 700; color: var(--negro); }
+.res-filtro-ev { background: var(--gris-bg); border: 1px solid var(--gris-borde); color: var(--negro); padding: 8px 13px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; outline: none; width: 220px; transition: border-color 0.15s; }
+.res-filtro-ev:focus { border-color: var(--azul-mid); }
+.res-table-wrap { overflow-x: auto; }
+.res-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.res-table thead tr { background: var(--azul); }
+.res-table thead th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 0.8px; text-transform: uppercase; white-space: nowrap; }
+.res-table tbody tr { border-bottom: 1px solid var(--gris-borde); transition: background 0.1s; }
+.res-table tbody tr:last-child { border-bottom: none; }
+.res-table tbody tr:hover { background: var(--azul-light); }
+.res-table tbody td { padding: 12px 14px; color: var(--negro); vertical-align: middle; }
+.td-enfrentamiento-res { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 600; }
+.vs-sep-res { font-size: 11px; color: var(--gris-muted); }
+.td-evento-nombre { display: block; font-size: 12px; font-weight: 600; color: var(--negro); }
+.td-grupo { display: block; font-size: 11px; color: var(--gris-muted); margin-top: 2px; }
+.marcador-res { font-family: var(--font-serif); font-size: 18px; font-weight: 700; color: var(--azul); }
+.td-fecha { font-weight: 600; color: var(--azul-mid); white-space: nowrap; }
+.ganador-badge { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+.ganador-equipo { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+.ganador-empate { background: var(--gris-bg); color: var(--gris-muted); border: 1px solid var(--gris-borde); }
+.pub-badge { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+.pub-si { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+.pub-no { background: var(--gris-bg); color: var(--gris-muted); border: 1px solid var(--gris-borde); }
+.td-vacio { text-align: center; padding: 40px; color: var(--gris-muted); font-size: 13px; }
+.acciones { display: flex; gap: 6px; }
+.btn-ver-res { background: var(--gris-bg); color: var(--gris-texto); border: 1px solid var(--gris-borde); padding: 5px 12px; border-radius: var(--radius); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-ver-res:hover { background: var(--gris-borde); }
+.btn-pub { background: var(--azul-light); color: var(--azul); border: 1px solid #c3d9f7; padding: 5px 12px; border-radius: var(--radius); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-pub:hover { background: #d0e8ff; }
+.btn-despub { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; padding: 5px 12px; border-radius: var(--radius); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-despub:hover { background: #fed7d7; }
+/* MODAL DETALLE */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
+.modal-box { background: var(--blanco); border-radius: var(--radius); padding: 0; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(0,0,0,0.2); overflow: hidden; }
+.modal-res-detalle { max-width: 420px; }
+.modal-titulo { font-family: var(--font-serif); font-size: 17px; font-weight: 700; color: var(--negro); padding: 24px 28px 0; }
+.modal-marcador-grande { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 20px 28px; font-family: var(--font-serif); font-size: 52px; font-weight: 700; color: var(--azul); border-bottom: 1px solid var(--gris-borde); }
+.modal-guion { font-size: 28px; color: var(--gris-borde); }
+.modal-res-meta { padding: 20px 28px; display: flex; flex-direction: column; gap: 12px; }
+.detalle-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+.detalle-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gris-muted); }
+.detalle-val { font-size: 13px; color: var(--negro); }
+.modal-acciones { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 28px; border-top: 1px solid var(--gris-borde); background: var(--gris-bg); }
+@media (max-width: 900px) { .res-layout { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .res-historial-header { flex-direction: column; align-items: stretch; } .res-filtro-ev { width: 100%; } }

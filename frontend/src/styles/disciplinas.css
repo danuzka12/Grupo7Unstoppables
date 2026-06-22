@@ -1,0 +1,282 @@
+.disciplinas-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: var(--font);
+}
+
+/* ===================== TOPBAR ===================== */
+.disc-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.disc-search {
+  background: var(--blanco);
+  border: 1px solid var(--gris-borde);
+  color: var(--negro);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  width: 280px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.disc-search:focus {
+  border-color: var(--azul-mid);
+  box-shadow: 0 0 0 3px rgba(0, 80, 179, 0.08);
+}
+
+/* ===================== BOTÓN NUEVO ===================== */
+.btn-nueva {
+  background: linear-gradient(135deg, var(--azul), var(--azul-mid));
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-nueva:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 80, 179, 0.25);
+}
+
+/* ===================== FORMULARIO ===================== */
+.disc-form-card {
+  background: var(--blanco);
+  border: 1px solid var(--gris-borde);
+  border-top: 3px solid var(--azul);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.disc-form-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.disc-form-body input,
+.disc-form-body textarea,
+.disc-form-body select {
+  background: var(--gris-bg);
+  border: 1px solid var(--gris-borde);
+  color: var(--negro);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.disc-form-body textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.disc-form-body input:focus,
+.disc-form-body textarea:focus,
+.disc-form-body select:focus {
+  border-color: var(--azul-mid);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 80, 179, 0.08);
+}
+
+/* ===================== FOOTER FORM ===================== */
+.disc-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+/* ===================== BOTONES GENERALES ===================== */
+.btn-cancelar {
+  background: transparent;
+  border: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-cancelar:hover {
+  border-color: var(--negro);
+  color: var(--negro);
+  transform: translateY(-1px);
+}
+
+.btn-guardar {
+  background: var(--azul);
+  color: #fff;
+  border: none;
+  padding: 9px 22px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-guardar:hover {
+  background: var(--azul-mid);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 80, 179, 0.25);
+}
+
+/* ===================== TABLA ===================== */
+.disc-table-wrap {
+  background: var(--blanco);
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.disc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.disc-table thead {
+  background: var(--azul);
+}
+
+.disc-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.disc-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--gris-borde);
+  color: var(--negro);
+}
+
+.disc-table tbody tr:hover {
+  background: var(--azul-light);
+}
+
+/* ===================== ACCIONES ===================== */
+.acciones {
+  display: flex;
+  gap: 8px;
+}
+
+/* ===================== BOTÓN EDITAR ===================== */
+.btn-editar {
+  background: #e6f2ff;
+  color: var(--azul);
+  border: 1px solid #c3d9f7;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-editar:hover {
+  background: var(--azul);
+  color: #fff;
+  border-color: var(--azul);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 80, 179, 0.25);
+}
+
+/* ===================== BOTÓN ELIMINAR ===================== */
+.btn-eliminar {
+  background: #fff0f0;
+  color: #c53030;
+  border: 1px solid #fed7d7;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-eliminar:hover {
+  background: #e53e3e;
+  color: #fff;
+  border-color: #e53e3e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(229, 62, 62, 0.25);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-box {
+  background: var(--blanco);
+  padding: 28px;
+  border-radius: var(--radius);
+  width: 360px;
+  text-align: center;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+}
+
+.modal-box p {
+  margin-bottom: 18px;
+  font-size: 14px;
+  color: var(--negro);
+}
+
+.modal-box button {
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.modal-box button:first-child {
+  background: #e53e3e;
+  color: white;
+}
+
+.modal-box button:last-child {
+  background: var(--gris-bg);
+  color: var(--negro);
+}
+
+.modal-box button:hover {
+  opacity: 0.9;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  .disc-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .disc-search {
+    width: 100%;
+  }
+}
