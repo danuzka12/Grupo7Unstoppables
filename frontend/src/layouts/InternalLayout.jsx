@@ -11,6 +11,7 @@ const menuItems = [
   { label: 'Programación de partidos',     path: '/partidos' },
   { label: 'Resultados',                   path: '/resultados' },
   { label: 'Gestión de usuarios',          path: '/usuarios' },
+  { label: 'Instituciones', path: '/instituciones' },
 ]
 
 function InternalLayout({ children, titulo, subtitulo }) {

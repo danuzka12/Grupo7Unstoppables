@@ -11,6 +11,7 @@ import Partidos from './pages/Partidos'
 import Resultados from './pages/Resultados'
 import Usuarios from './pages/Usuarios'
 import ProtectedRoute from './routes/ProtectedRoute'
+import Instituciones from './pages/Instituciones'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/partidos" element={<ProtectedRoute><Partidos /></ProtectedRoute>} />
         <Route path="/resultados" element={<ProtectedRoute><Resultados /></ProtectedRoute>} />
         <Route path="/Usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
+        <Route path="/instituciones" element={<ProtectedRoute><Instituciones /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )
