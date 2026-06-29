@@ -29,8 +29,9 @@ public class institucion {
     @Column(name = "email", length = 100)
     private String email;
 
-    @Column(name = "logo_url", length = 255)
-    private String logoUrl;
+    @Lob
+    @Column(name = "logo", columnDefinition = "LONGBLOB")
+    private byte[] logo;
 
     @Column(name = "activo")
     private Boolean activo;

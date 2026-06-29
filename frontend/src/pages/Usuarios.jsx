@@ -3,6 +3,7 @@ import InternalLayout from '../layouts/InternalLayout'
 import '../styles/usuarios.css'
 
 const API = 'http://localhost:8080/api'
+const API_INST = 'http://localhost:8080/api/instituciones'
 
 const ROLES = [
   { id: 1, nombre: 'ADMIN_SISTEMA', label: 'Administrador del sistema' },
@@ -33,6 +34,7 @@ const EMPTY_FORM = {
 export default function Usuarios() {
 
   const [usuarios, setUsuarios] = useState([])
+  const [instituciones, setInstituciones] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -81,15 +83,18 @@ export default function Usuarios() {
 
     try {
 
-      const res = await fetch(`${API}/usuarios`)
+      const [res, resI] = await Promise.all([
+        fetch(`${API}/usuarios`),
+        fetch(API_INST)
+      ])
 
       if (!res.ok) {
         throw new Error('Error al cargar usuarios')
       }
 
       const data = await res.json()
-
       setUsuarios(data)
+      if (resI.ok) setInstituciones(await resI.json())
 
     } catch (e) {
 
@@ -647,15 +652,20 @@ export default function Usuarios() {
 
                 <div className="u-field">
 
-                  <label>ID Institución</label>
+                  <label>Institución</label>
 
-                  <input
+                  <select
                     name="idInstitucion"
-                    type="number"
                     value={form.idInstitucion}
                     onChange={handleFormChange}
-                    min={1}
-                  />
+                  >
+                    <option value="">Sin institución</option>
+                    {instituciones.map(i => (
+                      <option key={i.idInstitucion} value={i.idInstitucion}>
+                        {i.nombre}
+                      </option>
+                    ))}
+                  </select>
 
                 </div>
 

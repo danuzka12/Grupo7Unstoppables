@@ -1,5 +1,7 @@
 package olimpiadas_academicas_backend.backend.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -19,4 +21,6 @@ public class deporteDTO {
     private Integer maxJugadores;
 
     private Integer minJugadores;
+
+    private List<Long> categoriaIds;
 }
