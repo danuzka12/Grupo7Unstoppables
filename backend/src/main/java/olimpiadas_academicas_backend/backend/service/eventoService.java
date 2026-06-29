@@ -1,74 +1,177 @@
 package olimpiadas_academicas_backend.backend.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import olimpiadas_academicas_backend.backend.dto.eventoDTO;
-import olimpiadas_academicas_backend.backend.model.evento;
+import olimpiadas_academicas_backend.backend.dto.eventoDeporteDTO;
+import olimpiadas_academicas_backend.backend.model.*;
 import olimpiadas_academicas_backend.backend.model.enums.EstadoEvento;
-import olimpiadas_academicas_backend.backend.repository.eventoRepository;
+import olimpiadas_academicas_backend.backend.repository.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class eventoService {
-    private final eventoRepository repository;
 
-    public eventoService(eventoRepository repository) {
-        this.repository = repository;
+    private final eventoRepository eventoRepo;
+    private final eventoDeporteRepository eventoDepRepo;
+    private final deporteRepository deporteRepo;
+    private final categoriaRepository categoriaRepo;
+
+    @PersistenceContext
+    private EntityManager em;
+
+    public eventoService(eventoRepository eventoRepo,
+            eventoDeporteRepository eventoDepRepo,
+            deporteRepository deporteRepo,
+            categoriaRepository categoriaRepo) {
+        this.eventoRepo = eventoRepo;
+        this.eventoDepRepo = eventoDepRepo;
+        this.deporteRepo = deporteRepo;
+        this.categoriaRepo = categoriaRepo;
     }
 
-    public List<evento> listar() {
-        return repository.findAll();
+    // ── LISTAR ──────────────────────────────────────────────
+    public List<Map<String, Object>> listar() {
+        return eventoRepo.findAll().stream()
+                .map(this::toMap)
+                .collect(Collectors.toList());
     }
 
-    public evento crear(eventoDTO dto) {
+    // ── OBTENER ─────────────────────────────────────────────
+    public Map<String, Object> obtener(Long id) {
+        return toMap(buscarOFallar(id));
+    }
 
+    // ── CREAR ───────────────────────────────────────────────
+    @Transactional
+    public Map<String, Object> crear(eventoDTO dto) {
         evento e = new evento();
-
-        e.setNombre(dto.getNombre());
-        e.setDescripcion(dto.getDescripcion());
-
-        e.setFechaInicio(dto.getFechaInicio());
-        e.setFechaFin(dto.getFechaFin());
-        e.setFechaLimiteInsc(dto.getFechaLimiteInsc());
-
-        e.setPremio(dto.getPremio());
-        e.setMinEquipos(dto.getMinEquipos());
-
-        e.setEstado(EstadoEvento.valueOf(dto.getEstado()));
-
-        e.setIdInstitucion(dto.getIdInstitucion());
-        e.setIdUsuarioCreador(dto.getIdUsuarioCreador());
-
+        aplicarCampos(e, dto);
         e.setCreatedAt(LocalDateTime.now());
         e.setUpdatedAt(LocalDateTime.now());
+        evento guardado = eventoRepo.save(e);
 
-        return repository.save(e);
+        asociarDeportes(guardado, dto.getDeportes());
+
+        return toMap(guardado);
     }
 
-    public evento actualizar(Long id, eventoDTO dto) {
+    // ── ACTUALIZAR ──────────────────────────────────────────
+    @Transactional
+    public Map<String, Object> actualizar(Long id, eventoDTO dto) {
+        evento e = buscarOFallar(id);
+        aplicarCampos(e, dto);
+        e.setUpdatedAt(LocalDateTime.now());
+        eventoRepo.save(e);
+        em.flush();
 
-        evento e = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        // Reemplazar deportes
+        em.createNativeQuery("DELETE FROM evento_deporte WHERE id_evento = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+        em.flush();
 
-        e.setNombre(dto.getNombre());
+        asociarDeportes(e, dto.getDeportes());
+        em.flush();
+
+        return toMap(eventoRepo.findById(id).orElseThrow());
+    }
+
+    // ── ELIMINAR ────────────────────────────────────────────
+    @Transactional
+    public void eliminar(Long id) {
+        buscarOFallar(id);
+        em.createNativeQuery("DELETE FROM evento_deporte WHERE id_evento = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+        em.flush();
+        eventoRepo.deleteById(id);
+    }
+
+    // ── HELPERS ─────────────────────────────────────────────
+    private evento buscarOFallar(Long id) {
+        return eventoRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Evento no encontrado: " + id));
+    }
+
+    private EstadoEvento parseEstado(String estado) {
+        try {
+            return EstadoEvento.valueOf(estado.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Estado inválido: " + estado);
+        }
+    }
+
+    private void aplicarCampos(evento e, eventoDTO dto) {
+        e.setNombre(dto.getNombre().trim());
         e.setDescripcion(dto.getDescripcion());
-
         e.setFechaInicio(dto.getFechaInicio());
         e.setFechaFin(dto.getFechaFin());
         e.setFechaLimiteInsc(dto.getFechaLimiteInsc());
-
         e.setPremio(dto.getPremio());
         e.setMinEquipos(dto.getMinEquipos());
-
-        e.setEstado(EstadoEvento.valueOf(dto.getEstado()));
-
-        e.setUpdatedAt(LocalDateTime.now());
-
-        return repository.save(e);
+        e.setEstado(parseEstado(dto.getEstado()));
+        e.setIdInstitucion(dto.getIdInstitucion());
+        e.setIdUsuarioCreador(dto.getIdUsuarioCreador());
     }
 
-    public void eliminar(Long id) {
-        repository.deleteById(id);
+    private void asociarDeportes(evento ev, List<eventoDeporteDTO> deportes) {
+        if (deportes == null || deportes.isEmpty())
+            return;
+        for (eventoDeporteDTO d : deportes) {
+            deporte dep = deporteRepo.findById(d.getIdDeporte())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Deporte no encontrado: " + d.getIdDeporte()));
+            categoria cat = categoriaRepo.findById(d.getIdCategoria())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Categoría no encontrada: " + d.getIdCategoria()));
+
+            eventoDeporte ed = new eventoDeporte();
+            ed.setEvento(ev);
+            ed.setDeporte(dep);
+            ed.setCategoria(cat);
+            em.persist(ed);
+        }
+    }
+
+    // Mapper entidad → Map limpio
+    private Map<String, Object> toMap(evento e) {
+        List<Map<String, Object>> deportes = eventoDepRepo
+                .findByEvento_IdEvento(e.getIdEvento())
+                .stream()
+                .map(ed -> {
+                    Map<String, Object> d = new LinkedHashMap<>();
+                    d.put("idEventoDeporte", ed.getIdEventoDeporte());
+                    d.put("idDeporte", ed.getDeporte().getIdDeporte());
+                    d.put("nombreDeporte", ed.getDeporte().getNombre());
+                    d.put("idCategoria", ed.getCategoria() != null ? ed.getCategoria().getIdCategoria() : null);
+                    d.put("nombreCategoria", ed.getCategoria() != null ? ed.getCategoria().getNombre() : null);
+                    return d;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("idEvento", e.getIdEvento());
+        m.put("nombre", e.getNombre());
+        m.put("descripcion", e.getDescripcion());
+        m.put("fechaInicio", e.getFechaInicio());
+        m.put("fechaFin", e.getFechaFin());
+        m.put("fechaLimiteInsc", e.getFechaLimiteInsc());
+        m.put("premio", e.getPremio());
+        m.put("minEquipos", e.getMinEquipos());
+        m.put("estado", e.getEstado() != null ? e.getEstado().name() : null);
+        m.put("idInstitucion", e.getIdInstitucion());
+        m.put("idUsuarioCreador", e.getIdUsuarioCreador());
+        m.put("deportes", deportes);
+        return m;
     }
 }
