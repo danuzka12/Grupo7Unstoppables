@@ -8,5 +8,4 @@ import lombok.Setter;
 public class eventoDeporteDTO {
     private Long idDeporte;
     private Long idCategoria;
-    private Integer minParticipacion;
 }

@@ -4,11 +4,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
 public class eventoDTO {
+
     @NotBlank
     private String nombre;
 
@@ -20,12 +23,10 @@ public class eventoDTO {
     @NotNull
     private LocalDate fechaFin;
 
-    @NotNull
     private LocalDate fechaLimiteInsc;
 
     private String premio;
 
-    @NotNull
     private Integer minEquipos;
 
     @NotNull
@@ -34,6 +35,8 @@ public class eventoDTO {
     @NotNull
     private Long idInstitucion;
 
-    @NotNull
     private Long idUsuarioCreador;
+
+    // Deportes a asociar al evento
+    private List<eventoDeporteDTO> deportes;
 }
