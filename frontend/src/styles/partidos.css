@@ -32,10 +32,14 @@
 .partidos-table tbody tr:last-child { border-bottom: none; }
 .partidos-table tbody tr:hover { background: var(--azul-light); }
 .partidos-table tbody td { padding: 12px 14px; color: var(--negro); vertical-align: middle; }
-.td-num { color: var(--gris-muted); font-weight: 600; width: 36px; }
+.td-num { color: var(--gris-muted); font-weight: 600; width: 90px; }
+.td-num small { display: block; margin-top: 2px; color: var(--gris-muted); font-size: 10px; font-weight: 600; }
+.td-code { display: inline-block; color: var(--azul); background: var(--azul-light); border: 1px solid #c3d9f7; border-radius: 100px; padding: 3px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px; }
 .td-enfrentamiento { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.eq-local, .eq-visita { display: flex; flex-direction: column; gap: 2px; }
 .eq-local { font-weight: 700; color: var(--negro); }
 .eq-visita { font-weight: 500; color: var(--gris-texto); }
+.eq-local small, .eq-visita small { color: var(--azul); font-size: 10px; font-weight: 800; letter-spacing: 0.4px; }
 .vs-sep { font-size: 11px; font-weight: 700; color: var(--gris-muted); background: var(--gris-bg); padding: 2px 6px; border-radius: 4px; }
 .td-evento-nombre { display: block; font-size: 12px; font-weight: 600; color: var(--negro); }
 .td-grupo { display: block; font-size: 11px; color: var(--gris-muted); margin-top: 2px; }

@@ -1,233 +1,272 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import InternalLayout from '../layouts/InternalLayout'
+import '../styles/sorteo.css'
 import '../styles/partidos.css'
 
-const eventosDisponibles = [
-  { id: 1, nombre: 'Olimpiadas Interinstitucionales 2025' },
-  { id: 2, nombre: 'Copa Institucional Junio' },
-]
+const API = 'http://localhost:8080/api'
 
-const gruposDisponibles = {
-  1: ['Grupo A', 'Grupo B', 'Grupo C'],
-  2: ['Grupo A', 'Grupo B'],
+const codigo = (prefijo, id) => `${prefijo}-${String(id ?? 0).padStart(3, '0')}`
+
+function fechaLocalManana() {
+  const d = new Date(Date.now() + 86400000)
+  d.setHours(9, 0, 0, 0)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
-
-const equiposPorGrupo = {
-  'Grupo A': ['Equipo Norte', 'Equipo Sur', 'Equipo Este'],
-  'Grupo B': ['Equipo Oeste', 'Equipo Central', 'Equipo Andino'],
-  'Grupo C': ['Equipo Azul', 'Equipo Rojo'],
-}
-
-const sedesDisponibles = ['Estadio Central', 'Coliseo Norte', 'Pista Olímpica', 'Piscina Municipal', 'Cancha Sur']
-
-const partidosIniciales = [
-  { id: 1, eventoId: 1, grupo: 'Grupo A', equipoLocal: 'Equipo Norte', equipoVisita: 'Equipo Sur', fecha: '2025-06-10', hora: '10:00', sede: 'Estadio Central', estado: 'Programado' },
-  { id: 2, eventoId: 1, grupo: 'Grupo A', equipoLocal: 'Equipo Este', equipoVisita: 'Equipo Norte', fecha: '2025-06-12', hora: '15:00', sede: 'Estadio Central', estado: 'Programado' },
-]
 
 function PartidosPage() {
-  const [partidos, setPartidos] = useState(partidosIniciales)
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const [editando, setEditando] = useState(null)
-  const [filtroEvento, setFiltroEvento] = useState('')
+  const [competencias, setCompetencias] = useState([])
+  const [sedes, setSedes] = useState([])
+  const [partidos, setPartidos] = useState([])
+  const [idEventoDeporte, setIdEventoDeporte] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
-  const [confirmarEliminar, setConfirmarEliminar] = useState(null)
-
-  const formVacio = { eventoId: '', grupo: '', equipoLocal: '', equipoVisita: '', fecha: '', hora: '', sede: '', estado: 'Programado' }
-  const [form, setForm] = useState(formVacio)
-  const [errores, setErrores] = useState({})
-
-  const gruposDisp = form.eventoId ? (gruposDisponibles[form.eventoId] || []) : []
-  const equiposDisp = form.grupo ? (equiposPorGrupo[form.grupo] || []) : []
-
-  const validar = () => {
-    const e = {}
-    if (!form.eventoId)                 e.eventoId      = 'Selecciona un evento.'
-    if (!form.grupo)                    e.grupo         = 'Selecciona un grupo.'
-    if (!form.equipoLocal)              e.equipoLocal   = 'Selecciona el equipo local.'
-    if (!form.equipoVisita)             e.equipoVisita  = 'Selecciona el equipo visitante.'
-    if (form.equipoLocal && form.equipoVisita && form.equipoLocal === form.equipoVisita) e.equipoVisita = 'Los equipos no pueden ser el mismo.'
-    if (!form.fecha)                    e.fecha         = 'La fecha es requerida.'
-    if (!form.hora)                     e.hora          = 'La hora es requerida.'
-    if (!form.sede)                     e.sede          = 'La sede es requerida.'
-    const conflicto = partidos.find(p =>
-      p.id !== editando && p.fecha === form.fecha && p.hora === form.hora && p.sede === form.sede
-    )
-    if (conflicto) e.hora = `Conflicto: ya existe un partido en esa sede, fecha y hora.`
-    setErrores(e)
-    return Object.keys(e).length === 0
-  }
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    let update = { ...form, [name]: value }
-    if (name === 'eventoId') update = { ...update, grupo: '', equipoLocal: '', equipoVisita: '' }
-    if (name === 'grupo') update = { ...update, equipoLocal: '', equipoVisita: '' }
-    setForm(update)
-    setErrores({ ...errores, [name]: '' })
-  }
-
-  const handleGuardar = () => {
-    if (!validar()) return
-    if (editando !== null) {
-      setPartidos(partidos.map(p => p.id === editando ? { ...form, id: editando } : p))
-    } else {
-      setPartidos([...partidos, { ...form, id: Date.now() }])
-    }
-    setForm(formVacio); setMostrarForm(false); setEditando(null); setErrores({})
-  }
-
-  const handleEditar = (p) => {
-    setForm({ eventoId: p.eventoId, grupo: p.grupo, equipoLocal: p.equipoLocal, equipoVisita: p.equipoVisita, fecha: p.fecha, hora: p.hora, sede: p.sede, estado: p.estado })
-    setEditando(p.id); setMostrarForm(true); setErrores({})
-  }
-
-  const handleEliminar = (id) => { setPartidos(partidos.filter(p => p.id !== id)); setConfirmarEliminar(null) }
-
-  const getNombreEvento = (id) => eventosDisponibles.find(e => String(e.id) === String(id))?.nombre || '—'
-
-  const filtrados = partidos.filter(p => {
-    const matchEv = filtroEvento ? String(p.eventoId) === filtroEvento : true
-    const matchEst = filtroEstado ? p.estado === filtroEstado : true
-    return matchEv && matchEst
+  const [mensaje, setMensaje] = useState('')
+  const [error, setError] = useState('')
+  const [generando, setGenerando] = useState(false)
+  const [config, setConfig] = useState({
+    fechaInicio: fechaLocalManana(),
+    intervaloMinutos: 120,
+    sedeIds: [],
   })
 
-  const formatFecha = (f) => f ? f.split('-').reverse().join('/') : '—'
+  const competencia = useMemo(
+    () => competencias.find(c => String(c.idEventoDeporte) === String(idEventoDeporte)),
+    [competencias, idEventoDeporte],
+  )
+
+  async function cargarInicial() {
+    try {
+      const [resCompetencias, resSedes] = await Promise.all([
+        fetch(`${API}/competencias`),
+        fetch(`${API}/partidos/sedes`),
+      ])
+      const comp = await resCompetencias.json()
+      const sed = await resSedes.json()
+      setCompetencias(comp)
+      setSedes(sed)
+      setConfig(c => ({ ...c, sedeIds: sed.map(s => s.idSede) }))
+      if (comp.length > 0) setIdEventoDeporte(String(comp[0].idEventoDeporte))
+    } catch {
+      setError('No se pudo cargar competencias o sedes.')
+    }
+  }
+
+  async function cargarPartidos(id) {
+    setError('')
+    try {
+      const res = await fetch(`${API}/partidos?idEventoDeporte=${id}`)
+      const data = await res.json()
+      setPartidos(data)
+    } catch {
+      setError('No se pudo cargar la programación de partidos.')
+    }
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargarInicial()
+  }, [])
+
+  useEffect(() => {
+    if (!idEventoDeporte) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargarPartidos(idEventoDeporte)
+  }, [idEventoDeporte])
+
+  function toggleSede(idSede) {
+    setConfig(c => ({
+      ...c,
+      sedeIds: c.sedeIds.includes(idSede)
+        ? c.sedeIds.filter(id => id !== idSede)
+        : [...c.sedeIds, idSede],
+    }))
+  }
+
+  async function generarFixture() {
+    if (!idEventoDeporte) return
+    setGenerando(true)
+    setMensaje('')
+    setError('')
+    try {
+      const res = await fetch(`${API}/partidos/generar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idEventoDeporte: Number(idEventoDeporte),
+          fechaInicio: config.fechaInicio,
+          intervaloMinutos: Number(config.intervaloMinutos),
+          sedeIds: config.sedeIds,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'No se pudo generar la programación.')
+      setPartidos(data)
+      setMensaje(`${data.length} partidos generados y guardados en la base de datos.`)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setGenerando(false)
+    }
+  }
+
+  const filtrados = partidos.filter(p => filtroEstado ? p.estado === filtroEstado : true)
+  const gruposProgramados = new Set(partidos.map(p => p.grupo).filter(Boolean)).size
+
+  const formatFecha = value => {
+    if (!value) return '—'
+    return new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date(value))
+  }
+
+  const formatHora = value => {
+    if (!value) return '—'
+    return new Intl.DateTimeFormat('es-PE', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(value))
+  }
 
   return (
-    <InternalLayout titulo="Programación de partidos" subtitulo="Genera y gestiona el calendario de partidos validando conflictos de horario y sede">
+    <InternalLayout titulo="Programación de partidos" subtitulo="Genera el calendario desde los grupos sorteados y valida sedes disponibles">
       <div className="partidos-page">
 
-        <div className="part-topbar">
-          <div className="part-filtros">
-            <select className="part-select-filtro" value={filtroEvento} onChange={e => setFiltroEvento(e.target.value)}>
-              <option value="">Todos los eventos</option>
-              {eventosDisponibles.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
-            </select>
-            <select className="part-select-filtro" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
-              <option value="">Todos los estados</option>
-              <option value="Programado">Programado</option>
-              <option value="En curso">En curso</option>
-              <option value="Finalizado">Finalizado</option>
-              <option value="Suspendido">Suspendido</option>
-            </select>
-          </div>
-          <button className="btn-nuevo-partido" onClick={() => { setMostrarForm(true); setEditando(null); setForm(formVacio) }}>+ Programar partido</button>
-        </div>
+        {mensaje && <div className="sorteo-aviso" style={{ borderColor: '#b7ebc6', color: '#166534' }}>{mensaje}</div>}
+        {error && <div className="sorteo-aviso">{error}</div>}
 
-        {mostrarForm && (
-          <div className="partido-form-card">
-            <div className="partido-form-header">
-              <h2 className="partido-form-titulo">{editando !== null ? 'Editar partido' : 'Programar partido'}</h2>
-              <p className="partido-form-subtitulo">Se verificará que no existan conflictos de sede, fecha y hora.</p>
+        {competencia && (
+          <div className="flujo-card">
+            <div className="flujo-item">
+              <span className="flujo-label">Evento</span>
+              <strong>{codigo('EV', competencia.idEvento)}</strong>
+              <small>{competencia.evento}</small>
             </div>
-            <div className="partido-form-body">
-              <div className="form-row-2">
-                <div className="form-group">
-                  <label>Evento</label>
-                  <select name="eventoId" value={form.eventoId} onChange={handleChange} className={errores.eventoId ? 'input-error' : ''}>
-                    <option value="">Selecciona un evento</option>
-                    {eventosDisponibles.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
-                  </select>
-                  {errores.eventoId && <span className="error-msg">{errores.eventoId}</span>}
-                </div>
-                <div className="form-group">
-                  <label>Grupo / Serie</label>
-                  <select name="grupo" value={form.grupo} onChange={handleChange} className={errores.grupo ? 'input-error' : ''} disabled={!form.eventoId}>
-                    <option value="">Selecciona un grupo</option>
-                    {gruposDisp.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                  {errores.grupo && <span className="error-msg">{errores.grupo}</span>}
-                </div>
-              </div>
-              <div className="form-row-2">
-                <div className="form-group">
-                  <label>Equipo local</label>
-                  <select name="equipoLocal" value={form.equipoLocal} onChange={handleChange} className={errores.equipoLocal ? 'input-error' : ''} disabled={!form.grupo}>
-                    <option value="">Selecciona equipo local</option>
-                    {equiposDisp.map(eq => <option key={eq} value={eq}>{eq}</option>)}
-                  </select>
-                  {errores.equipoLocal && <span className="error-msg">{errores.equipoLocal}</span>}
-                </div>
-                <div className="form-group">
-                  <label>Equipo visitante</label>
-                  <select name="equipoVisita" value={form.equipoVisita} onChange={handleChange} className={errores.equipoVisita ? 'input-error' : ''} disabled={!form.grupo}>
-                    <option value="">Selecciona equipo visitante</option>
-                    {equiposDisp.filter(eq => eq !== form.equipoLocal).map(eq => <option key={eq} value={eq}>{eq}</option>)}
-                  </select>
-                  {errores.equipoVisita && <span className="error-msg">{errores.equipoVisita}</span>}
-                </div>
-              </div>
-              <div className="form-row-3">
-                <div className="form-group">
-                  <label>Fecha</label>
-                  <input type="date" name="fecha" value={form.fecha} onChange={handleChange} className={errores.fecha ? 'input-error' : ''} />
-                  {errores.fecha && <span className="error-msg">{errores.fecha}</span>}
-                </div>
-                <div className="form-group">
-                  <label>Hora</label>
-                  <input type="time" name="hora" value={form.hora} onChange={handleChange} className={errores.hora ? 'input-error' : ''} />
-                  {errores.hora && <span className="error-msg">{errores.hora}</span>}
-                </div>
-                <div className="form-group">
-                  <label>Sede</label>
-                  <select name="sede" value={form.sede} onChange={handleChange} className={errores.sede ? 'input-error' : ''}>
-                    <option value="">Selecciona sede</option>
-                    {sedesDisponibles.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  {errores.sede && <span className="error-msg">{errores.sede}</span>}
-                </div>
-              </div>
-              <div className="form-group" style={{maxWidth:'200px'}}>
-                <label>Estado</label>
-                <select name="estado" value={form.estado} onChange={handleChange}>
-                  <option value="Programado">Programado</option>
-                  <option value="En curso">En curso</option>
-                  <option value="Finalizado">Finalizado</option>
-                  <option value="Suspendido">Suspendido</option>
-                </select>
-              </div>
+            <div className="flujo-arrow">→</div>
+            <div className="flujo-item">
+              <span className="flujo-label">Competencia</span>
+              <strong>{codigo('COMP', competencia.idEventoDeporte)}</strong>
+              <small>{competencia.deporte} / {competencia.categoria}</small>
             </div>
-            <div className="partido-form-footer">
-              <button className="btn-cancelar-partido" onClick={() => { setMostrarForm(false); setForm(formVacio); setEditando(null); setErrores({}) }}>Cancelar</button>
-              <button className="btn-guardar-partido" onClick={handleGuardar}>{editando !== null ? 'Guardar cambios' : 'Programar partido'}</button>
+            <div className="flujo-arrow">→</div>
+            <div className="flujo-item">
+              <span className="flujo-label">Programación</span>
+              <strong>{partidos.length} partidos</strong>
+              <small>{gruposProgramados} grupos con fixture</small>
             </div>
           </div>
         )}
 
+        <div className="part-topbar">
+          <div className="part-filtros">
+            <select className="part-select-filtro" value={idEventoDeporte} onChange={e => setIdEventoDeporte(e.target.value)}>
+              <option value="">Selecciona una competencia</option>
+              {competencias.map(c => (
+                <option key={c.idEventoDeporte} value={c.idEventoDeporte}>
+                  {c.evento} · {c.deporte} · {c.categoria}
+                </option>
+              ))}
+            </select>
+            <select className="part-select-filtro" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
+              <option value="">Todos los estados</option>
+              <option value="PROGRAMADO">PROGRAMADO</option>
+              <option value="EN_CURSO">EN_CURSO</option>
+              <option value="FINALIZADO">FINALIZADO</option>
+              <option value="POSTERGADO">POSTERGADO</option>
+              <option value="CANCELADO">CANCELADO</option>
+            </select>
+          </div>
+          <button className="btn-nuevo-partido" onClick={generarFixture} disabled={generando || !idEventoDeporte || config.sedeIds.length === 0}>
+            {generando ? 'Generando...' : '+ Generar fixture'}
+          </button>
+        </div>
+
+        <div className="partido-form-card">
+          <div className="partido-form-header">
+            <h2 className="partido-form-titulo">Configuración automática</h2>
+            <p className="partido-form-subtitulo">
+              {competencia
+                ? `${competencia.evento} · ${competencia.deporte} · ${competencia.categoria}`
+                : 'Selecciona una competencia para programar.'}
+            </p>
+          </div>
+          <div className="partido-form-body">
+            <div className="form-row-3">
+              <div className="form-group">
+                <label>Inicio</label>
+                <input type="datetime-local" value={config.fechaInicio} onChange={e => setConfig({ ...config, fechaInicio: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Intervalo</label>
+                <select value={config.intervaloMinutos} onChange={e => setConfig({ ...config, intervaloMinutos: e.target.value })}>
+                  <option value="60">1 hora</option>
+                  <option value="90">1 hora 30 min</option>
+                  <option value="120">2 horas</option>
+                  <option value="180">3 horas</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Sedes activas</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {sedes.map(sede => (
+                    <label key={sede.idSede} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={config.sedeIds.includes(sede.idSede)}
+                        onChange={() => toggleSede(sede.idSede)}
+                      />
+                      {sede.nombre}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="partidos-table-wrap">
           <table className="partidos-table">
             <thead>
-              <tr><th>#</th><th>Enfrentamiento</th><th>Evento / Grupo</th><th>Fecha</th><th>Hora</th><th>Sede</th><th>Estado</th><th>Acciones</th></tr>
+              <tr>
+                <th>Índice</th>
+                <th>Enfrentamiento</th>
+                <th>Evento / Grupo</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Sede</th>
+                <th>Estado</th>
+              </tr>
             </thead>
             <tbody>
               {filtrados.length === 0 ? (
-                <tr><td colSpan={8} className="td-vacio">No hay partidos programados.</td></tr>
+                <tr><td colSpan={7} className="td-vacio">No hay partidos programados. Primero realiza el sorteo y luego genera el fixture.</td></tr>
               ) : filtrados.map((p, i) => (
-                <tr key={p.id}>
-                  <td className="td-num">{i + 1}</td>
+                <tr key={p.idPartido}>
+                  <td className="td-num">
+                    <span className="td-code">{codigo('P', p.idPartido)}</span>
+                    <small>Orden {i + 1}</small>
+                  </td>
                   <td className="td-enfrentamiento">
-                    <span className="eq-local">{p.equipoLocal}</span>
+                    <span className="eq-local">
+                      <small>{codigo('EQ', p.idEquipoLocal)}</small>
+                      {p.equipoLocal}
+                    </span>
                     <span className="vs-sep">vs</span>
-                    <span className="eq-visita">{p.equipoVisita}</span>
-                  </td>
-                  <td>
-                    <span className="td-evento-nombre">{getNombreEvento(p.eventoId)}</span>
-                    <span className="td-grupo">{p.grupo}</span>
-                  </td>
-                  <td className="td-fecha">{formatFecha(p.fecha)}</td>
-                  <td>{p.hora}</td>
-                  <td>{p.sede}</td>
-                  <td>
-                    <span className={`estado-partido ${p.estado === 'Programado' ? 'ep-programado' : p.estado === 'En curso' ? 'ep-encurso' : p.estado === 'Finalizado' ? 'ep-finalizado' : 'ep-suspendido'}`}>
-                      {p.estado}
+                    <span className="eq-visita">
+                      <small>{codigo('EQ', p.idEquipoVisitante)}</small>
+                      {p.equipoVisitante}
                     </span>
                   </td>
                   <td>
-                    <div className="acciones">
-                      <button className="btn-editar-partido" onClick={() => handleEditar(p)}>Editar</button>
-                      <button className="btn-eliminar-partido" onClick={() => setConfirmarEliminar(p.id)}>Eliminar</button>
-                    </div>
+                    <span className="td-evento-nombre">{codigo('EV', competencia?.idEvento)} · {competencia?.evento || '—'}</span>
+                    <span className="td-grupo">{codigo('COMP', p.idEventoDeporte)} · Grupo {p.grupo || '—'}</span>
+                  </td>
+                  <td className="td-fecha">{formatFecha(p.fechaHora)}</td>
+                  <td>{formatHora(p.fechaHora)}</td>
+                  <td>{p.sede || '—'}</td>
+                  <td>
+                    <span className="estado-partido ep-programado">{p.estado}</span>
                   </td>
                 </tr>
               ))}
@@ -235,19 +274,6 @@ function PartidosPage() {
           </table>
         </div>
         <p className="partidos-contador">{filtrados.length} partido{filtrados.length !== 1 ? 's' : ''} programado{filtrados.length !== 1 ? 's' : ''}</p>
-
-        {confirmarEliminar && (
-          <div className="modal-overlay">
-            <div className="modal-box">
-              <h3 className="modal-titulo">Confirmar eliminación</h3>
-              <p className="modal-desc">Se eliminará el partido del calendario. Esta acción no se puede deshacer.</p>
-              <div className="modal-acciones">
-                <button className="btn-cancelar-partido" onClick={() => setConfirmarEliminar(null)}>Cancelar</button>
-                <button className="btn-eliminar-confirm" onClick={() => handleEliminar(confirmarEliminar)}>Eliminar</button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </InternalLayout>
   )
