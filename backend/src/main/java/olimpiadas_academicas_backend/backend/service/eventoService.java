@@ -23,6 +23,8 @@ public class eventoService {
     private final eventoDeporteRepository eventoDepRepo;
     private final deporteRepository deporteRepo;
     private final categoriaRepository categoriaRepo;
+    private final institucionRepository institucionRepo;
+    private final emailService emailSvc;
 
     @PersistenceContext
     private EntityManager em;
@@ -30,11 +32,15 @@ public class eventoService {
     public eventoService(eventoRepository eventoRepo,
             eventoDeporteRepository eventoDepRepo,
             deporteRepository deporteRepo,
-            categoriaRepository categoriaRepo) {
+            categoriaRepository categoriaRepo,
+            institucionRepository institucionRepo,
+            emailService emailSvc) {
         this.eventoRepo = eventoRepo;
         this.eventoDepRepo = eventoDepRepo;
         this.deporteRepo = deporteRepo;
         this.categoriaRepo = categoriaRepo;
+        this.institucionRepo = institucionRepo;
+        this.emailSvc = emailSvc;
     }
 
     // ── LISTAR ──────────────────────────────────────────────
@@ -59,6 +65,8 @@ public class eventoService {
         evento guardado = eventoRepo.save(e);
 
         asociarDeportes(guardado, dto.getDeportes());
+
+        enviarCorreoConfirmacion(guardado);
 
         return toMap(guardado);
     }
@@ -141,6 +149,37 @@ public class eventoService {
             ed.setCategoria(cat);
             em.persist(ed);
         }
+    }
+
+    private void enviarCorreoConfirmacion(evento e) {
+        institucion inst = institucionRepo.findById(e.getIdInstitucion()).orElse(null);
+        if (inst == null || inst.getEmail() == null || inst.getEmail().isBlank()) {
+            return;
+        }
+
+        String disciplinas = eventoDepRepo.findByEvento_IdEvento(e.getIdEvento()).stream()
+                .map(ed -> ed.getDeporte().getNombre())
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        String asunto = "Confirmación de registro de evento: " + e.getNombre();
+
+        StringBuilder cuerpo = new StringBuilder();
+        cuerpo.append("Estimados,\n\n");
+        cuerpo.append("Le confirmamos que el evento \"").append(e.getNombre())
+                .append("\" ha sido registrado exitosamente en el sistema de Olimpiadas Académicas.\n\n");
+        cuerpo.append("Detalles del evento:\n");
+        cuerpo.append("- Fecha de inicio: ").append(e.getFechaInicio()).append("\n");
+        cuerpo.append("- Fecha de fin: ").append(e.getFechaFin()).append("\n");
+        if (e.getPremio() != null && !e.getPremio().isBlank()) {
+            cuerpo.append("- Premio: ").append(e.getPremio()).append("\n");
+        }
+        if (!disciplinas.isEmpty()) {
+            cuerpo.append("- Disciplinas: ").append(disciplinas).append("\n");
+        }
+        cuerpo.append("\nSaludos cordiales,\nEquipo de Olimpiadas Académicas");
+
+        emailSvc.enviar(inst.getEmail(), asunto, cuerpo.toString());
     }
 
     // Mapper entidad → Map limpio
