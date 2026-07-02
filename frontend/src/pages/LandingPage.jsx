@@ -1,33 +1,77 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import '../styles/landing.css'
+import { obtenerResumenLanding } from '../services/landingService'
+import '../styles/Landing.css'
 
-const proximosEventos = [
-  { fecha: '02 Jun', disciplina: 'Fútbol masculino', categoria: 'Sub-18', sede: 'Estadio Central' },
-  { fecha: '05 Jun', disciplina: 'Atletismo', categoria: 'Abierto', sede: 'Pista Olímpica' },
-  { fecha: '08 Jun', disciplina: 'Baloncesto femenino', categoria: 'Sub-20', sede: 'Coliseo Norte' },
-  { fecha: '10 Jun', disciplina: 'Natación', categoria: 'Abierto', sede: 'Piscina Municipal' },
-]
+const ESTADO_BADGE = {
+  BORRADOR:   'badge-borrador',
+  ABIERTO:    'badge-abierto',
+  EN_CURSO:   'badge-encurso',
+  FINALIZADO: 'badge-finalizado',
+  CANCELADO:  'badge-cancelado',
+}
 
-const disciplinas = [
-  'Fútbol', 'Baloncesto', 'Atletismo', 'Natación',
-  'Voleibol', 'Tenis de mesa', 'Ajedrez', 'Ciclismo',
-]
+const ESTADO_LABEL = {
+  BORRADOR:   'Borrador',
+  ABIERTO:    'Inscripciones abiertas',
+  EN_CURSO:   'En curso',
+  FINALIZADO: 'Finalizado',
+  CANCELADO:  'Cancelado',
+}
 
-const tablaPosiciones = [
-  { pos: 1, institucion: 'Institución A', pts: 38, oro: 5, plata: 3, bronce: 2 },
-  { pos: 2, institucion: 'Institución B', pts: 31, oro: 4, plata: 2, bronce: 4 },
-  { pos: 3, institucion: 'Institución C', pts: 27, oro: 3, plata: 4, bronce: 1 },
-  { pos: 4, institucion: 'Institución D', pts: 19, oro: 2, plata: 1, bronce: 3 },
-]
+const GANADOR_LABEL = {
+  LOCAL:      'Ganó local',
+  VISITANTE:  'Ganó visitante',
+  EMPATE:     'Empate',
+}
 
-const resultados = [
-  { disciplina: 'Fútbol masculino', equipoA: 'Equipo Norte', marcA: 3, marcB: 1, equipoB: 'Equipo Sur', estado: 'Finalizado' },
-  { disciplina: 'Baloncesto', equipoA: 'Equipo Este', marcA: 74, marcB: 68, equipoB: 'Equipo Oeste', estado: 'Finalizado' },
-  { disciplina: 'Voleibol femenino', equipoA: 'Equipo A', marcA: 2, marcB: 1, equipoB: 'Equipo B', estado: 'Finalizado' },
-]
+function formatFecha(valor) {
+  if (!valor) return '—'
+  const fecha = new Date(valor)
+  if (Number.isNaN(fecha.getTime())) return '—'
+  return fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })
+}
+
+function formatFechaHora(valor) {
+  if (!valor) return '—'
+  const fecha = new Date(valor)
+  if (Number.isNaN(fecha.getTime())) return '—'
+  return fecha.toLocaleString('es-PE', {
+    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+  })
+}
 
 function LandingPage() {
   const navigate = useNavigate()
+
+  const [datos, setDatos]     = useState(null)
+  const [cargando, setCargando] = useState(true)
+  const [error, setError]     = useState('')
+
+  useEffect(() => {
+    let activo = true
+
+    async function cargar() {
+      try {
+        const resumen = await obtenerResumenLanding()
+        if (activo) setDatos(resumen)
+      } catch (e) {
+        console.error(e)
+        if (activo) setError('No se pudo cargar la información en este momento. Verifica que el servidor esté disponible.')
+      } finally {
+        if (activo) setCargando(false)
+      }
+    }
+
+    cargar()
+    return () => { activo = false }
+  }, [])
+
+  const estadisticas      = datos?.estadisticas ?? {}
+  const proximosEventos   = datos?.proximosEventos ?? []
+  const ultimosResultados = datos?.ultimosResultados ?? []
+  const tablaPosiciones   = datos?.tablaPosiciones ?? []
+  const disciplinas       = datos?.disciplinas ?? []
 
   return (
     <div className="landing">
@@ -49,7 +93,7 @@ function LandingPage() {
       {/* HERO */}
       <section className="hero">
         <div className="hero-inner">
-          <p className="hero-eyebrow">Edición 2025</p>
+          <p className="hero-eyebrow">Edición actual</p>
           <h1 className="hero-title">Olimpiadas<br />Deportivas<br />Institucionales</h1>
           <p className="hero-desc">
             Consulta resultados, próximos eventos, disciplinas participantes
@@ -57,22 +101,26 @@ function LandingPage() {
           </p>
           <div className="hero-meta">
             <div className="meta-item">
-              <span className="meta-num">8</span>
+              <span className="meta-num">{estadisticas.disciplinas ?? '—'}</span>
               <span className="meta-label">Disciplinas</span>
             </div>
             <div className="meta-sep"></div>
             <div className="meta-item">
-              <span className="meta-num">24</span>
-              <span className="meta-label">Eventos programados</span>
+              <span className="meta-num">{estadisticas.eventos ?? '—'}</span>
+              <span className="meta-label">Eventos registrados</span>
             </div>
             <div className="meta-sep"></div>
             <div className="meta-item">
-              <span className="meta-num">16</span>
+              <span className="meta-num">{estadisticas.instituciones ?? '—'}</span>
               <span className="meta-label">Instituciones</span>
             </div>
           </div>
         </div>
       </section>
+
+      {error && (
+        <div className="landing-alert">{error}</div>
+      )}
 
       {/* PRÓXIMOS EVENTOS */}
       <section className="section">
@@ -81,30 +129,41 @@ function LandingPage() {
             <h2 className="section-title">Próximos eventos</h2>
             <span className="section-badge">Programación oficial</span>
           </div>
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Disciplina</th>
-                  <th>Categoría</th>
-                  <th>Sede</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {proximosEventos.map((e, i) => (
-                  <tr key={i}>
-                    <td className="td-fecha">{e.fecha}</td>
-                    <td className="td-main">{e.disciplina}</td>
-                    <td>{e.categoria}</td>
-                    <td>{e.sede}</td>
-                    <td><span className="badge-pendiente">Pendiente</span></td>
+
+          {cargando ? (
+            <p className="landing-estado">Cargando eventos…</p>
+          ) : proximosEventos.length === 0 ? (
+            <p className="landing-estado">No hay eventos próximos registrados por el momento.</p>
+          ) : (
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Evento</th>
+                    <th>Disciplinas</th>
+                    <th>Premio</th>
+                    <th>Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {proximosEventos.map((e) => (
+                    <tr key={e.idEvento}>
+                      <td className="td-fecha">{formatFecha(e.fechaInicio)}</td>
+                      <td className="td-main">{e.nombre}</td>
+                      <td>{e.disciplinas || '—'}</td>
+                      <td>{e.premio || '—'}</td>
+                      <td>
+                        <span className={ESTADO_BADGE[e.estado] || 'badge-pendiente'}>
+                          {ESTADO_LABEL[e.estado] || e.estado}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </section>
 
@@ -113,25 +172,37 @@ function LandingPage() {
         <div className="section-inner">
           <div className="section-header">
             <h2 className="section-title">Últimos resultados</h2>
-            <span className="section-badge">Actualizado hoy</span>
+            <span className="section-badge">Últimos 3 publicados</span>
           </div>
-          <div className="results-grid">
-            {resultados.map((r, i) => (
-              <div className="result-card" key={i}>
-                <span className="result-disciplina">{r.disciplina}</span>
-                <div className="result-marcador">
-                  <span className="result-equipo">{r.equipoA}</span>
-                  <div className="result-score">
-                    <span>{r.marcA}</span>
-                    <span className="score-sep">—</span>
-                    <span>{r.marcB}</span>
+
+          {cargando ? (
+            <p className="landing-estado">Cargando resultados…</p>
+          ) : ultimosResultados.length === 0 ? (
+            <p className="landing-estado">Todavía no hay resultados publicados.</p>
+          ) : (
+            <div className="results-grid">
+              {ultimosResultados.map((r) => (
+                <div className="result-card" key={r.idResultado}>
+                  <span className="result-disciplina">
+                    {r.disciplina}{r.categoria ? ` · ${r.categoria}` : ''}
+                  </span>
+                  <div className="result-marcador">
+                    <span className="result-equipo">{r.equipoLocal}</span>
+                    <div className="result-score">
+                      <span>{r.golesLocal}</span>
+                      <span className="score-sep">—</span>
+                      <span>{r.golesVisitante}</span>
+                    </div>
+                    <span className="result-equipo result-equipo-b">{r.equipoVisitante}</span>
                   </div>
-                  <span className="result-equipo result-equipo-b">{r.equipoB}</span>
+                  <div className="result-footer">
+                    <span className="badge-finalizado">{GANADOR_LABEL[r.ganador] || r.ganador}</span>
+                    <span className="result-fecha">{formatFechaHora(r.fechaRegistro)}</span>
+                  </div>
                 </div>
-                <span className="badge-finalizado">{r.estado}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -140,34 +211,51 @@ function LandingPage() {
         <div className="section-inner">
           <div className="section-header">
             <h2 className="section-title">Tabla de posiciones</h2>
-            <span className="section-badge">General · Edición 2025</span>
+            <span className="section-badge">General · provisional</span>
           </div>
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Pos.</th>
-                  <th>Institución</th>
-                  <th>Oro</th>
-                  <th>Plata</th>
-                  <th>Bronce</th>
-                  <th>Puntos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tablaPosiciones.map((t) => (
-                  <tr key={t.pos} className={t.pos === 1 ? 'tr-top' : ''}>
-                    <td className="td-pos">{t.pos}</td>
-                    <td className="td-main">{t.institucion}</td>
-                    <td>{t.oro}</td>
-                    <td>{t.plata}</td>
-                    <td>{t.bronce}</td>
-                    <td className="td-pts">{t.pts}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+          {cargando ? (
+            <p className="landing-estado">Cargando tabla de posiciones…</p>
+          ) : tablaPosiciones.length === 0 ? (
+            <p className="landing-estado">Aún no hay partidos finalizados para calcular posiciones.</p>
+          ) : (
+            <>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Pos.</th>
+                      <th>Institución</th>
+                      <th>PJ</th>
+                      <th>Ganados</th>
+                      <th>Empates</th>
+                      <th>Perdidos</th>
+                      <th>Diferencia de puntos</th>
+                      <th>Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tablaPosiciones.map((t, i) => (
+                      <tr key={t.idInstitucion} className={i === 0 ? 'tr-top' : ''}>
+                        <td className="td-pos">{i + 1}</td>
+                        <td className="td-main">{t.institucion}</td>
+                        <td>{t.partidosJugados}</td>
+                        <td>{t.victorias}</td>
+                        <td>{t.empates}</td>
+                        <td>{t.derrotas}</td>
+                        <td>{t.diferenciaGoles}</td>
+                        <td className="td-pts">{t.puntos}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="landing-nota">
+                Tabla general acumulada de todas las disciplinas con partidos finalizados.
+                Próximamente se mostrará el medallero oficial por disciplina.
+              </p>
+            </>
+          )}
         </div>
       </section>
 
@@ -178,13 +266,20 @@ function LandingPage() {
             <h2 className="section-title">Disciplinas participantes</h2>
             <span className="section-badge">{disciplinas.length} disciplinas</span>
           </div>
-          <div className="disciplinas-grid">
-            {disciplinas.map((d, i) => (
-              <div className="disciplina-item" key={i}>
-                {d}
-              </div>
-            ))}
-          </div>
+
+          {cargando ? (
+            <p className="landing-estado">Cargando disciplinas…</p>
+          ) : disciplinas.length === 0 ? (
+            <p className="landing-estado">No hay disciplinas registradas todavía.</p>
+          ) : (
+            <div className="disciplinas-grid">
+              {disciplinas.map((d) => (
+                <div className="disciplina-item" key={d.idDeporte}>
+                  {d.nombre}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -193,7 +288,7 @@ function LandingPage() {
         <div className="footer-inner">
           <div className="footer-left">
             <span className="logo-main">Olimpiadas Deportivas Institucionales</span>
-            <span className="footer-sub">Portal público de consulta · Edición 2025</span>
+            <span className="footer-sub">Portal público de consulta</span>
           </div>
           <div className="footer-right">
             <button className="btn-acceso-footer" onClick={() => navigate('/login')}>

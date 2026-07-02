@@ -46,6 +46,23 @@
 .btn-cancelar-res:hover { border-color: var(--negro); color: var(--negro); }
 .btn-registrar-res { background: var(--azul); color: #fff; border: none; padding: 9px 24px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
 .btn-registrar-res:hover { background: var(--azul-mid); }
+/* GOLEADORES */
+.res-goleadores-wrap { padding: 4px 24px 20px; border-bottom: 1px solid var(--gris-borde); }
+.res-goleadores-header h4 { font-family: var(--font-serif); font-size: 14px; font-weight: 700; color: var(--negro); margin-bottom: 2px; }
+.res-goleadores-header p { font-size: 11.5px; color: var(--gris-muted); margin-bottom: 12px; }
+.res-goleadores-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.res-goleadores-col { background: var(--gris-bg); border: 1px solid var(--gris-borde); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.res-goleadores-col-titulo { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--negro); padding-bottom: 6px; border-bottom: 1px solid var(--gris-borde); }
+.res-goles-check { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 100px; }
+.res-goles-check.ok { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+.res-goles-check.warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.res-goleador-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.res-goleador-fila span { font-size: 12.5px; color: var(--gris-texto); }
+.res-goleador-fila input { width: 52px; text-align: center; background: var(--blanco); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 5px 4px; font-family: var(--font); font-size: 13px; outline: none; }
+.res-goleador-fila input:focus { border-color: var(--azul-mid); }
+.res-goleadores-lista { margin: 0; padding-left: 16px; }
+.res-goleadores-lista li { font-size: 12.5px; color: var(--negro); margin-bottom: 3px; }
+@media (max-width: 640px) { .res-goleadores-cols { grid-template-columns: 1fr; } }
 /* HISTORIAL */
 .res-historial { background: var(--blanco); border: 1px solid var(--gris-borde); border-radius: var(--radius); overflow: hidden; }
 .res-historial-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--gris-borde); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
